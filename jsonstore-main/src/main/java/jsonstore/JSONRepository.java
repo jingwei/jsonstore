@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2012 Jingwei Wu
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
 package jsonstore;
 
 import java.io.File;
@@ -266,7 +282,7 @@ public final class JSONRepository {
      * @param source - the source (i.e., store name)
      * @return the JSON schema string
      */
-    public String getSchema(String source) {
+    public synchronized String getSchema(String source) {
         try {
             File storeDir = getStoreDir(source, false);
             File schemaFile = new File(storeDir, "schema.json");
@@ -297,7 +313,7 @@ public final class JSONRepository {
      * @param schemaStr - the JSON schema string
      * @throws IOException
      */
-    public void putSchema(String source, String schemaStr) throws IOException {
+    public synchronized void putSchema(String source, String schemaStr) throws IOException {
         File storeDir = getStoreDir(source, true);
         File schemaFile = new File(storeDir, "schema.json");
         PrintWriter writer = new PrintWriter(schemaFile, "UTF-8");
@@ -311,7 +327,7 @@ public final class JSONRepository {
      * @param source - the source (i.e., store name)
      * @return the JSON schema string if the JSON schema is present
      */
-    public String removeSchema(String source) {
+    public synchronized String removeSchema(String source) {
         String schemaStr = null;
         try {
             File storeDir = getStoreDir(source, false);
