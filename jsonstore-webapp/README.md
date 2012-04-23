@@ -55,7 +55,7 @@ Creates the specified "News" JSON store.
 
 Puts the JSON schema of the specified JSON store.
 
-    curl -X PUT http://localhost:9010/jsonstore/News -d '
+    curl -X PUT -H "Content-type: application/json" http://localhost:9010/jsonstore/News -d '
     {
       "name" : "News",
       "type" : "object",
