@@ -11,7 +11,7 @@ Find out more about JSONStore at [https://github.com/jingwei/jsonstore](https://
 
 Apache Public License (APL) 2.0
 
-### Artifact
+### Artifacts
 
     jsonstore.jar
     jsonstore-webapp.war
