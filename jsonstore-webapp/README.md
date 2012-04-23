@@ -35,7 +35,7 @@ Inside Eclipse, select Preferences > Java > Build Path > Classpath Variables. De
 
 For more information, check out http://maven.apache.org/guides/mini/guide-ide-eclipse.html
 
-### Launch JSONStore 
+### Launch JSONStore Webapp 
 
 Launch the jsonstore-webapp application using the next command from the jsonstore/jsonstore-webapp folder:
 
@@ -45,7 +45,7 @@ The parameter <code>jsonstore.instance.initial.capacity</code> cannot be modifie
 So this parameter must be set properly based on the estimated size of data sets.
 
 Depending on the size of data sets, you may have to modify the JVM heap size accordingly via MAVEN_OPTS.
-For example, you can increase JVM heap size to 8g using MAVEN_OPTS="-Xms8g -Xmx8g".
+For example, you can increase the JVM heap size to 8g using <code>MAVEN_OPTS="-Xms8g -Xmx8g"</code>.
 
 ### Perform REST Operations
 
