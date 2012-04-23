@@ -100,3 +100,8 @@ Posts/Inserts a JSON object.
     {"id":"12345","timestamp":"1334210734541","title":"Facebook clarifies changes to its terms of use"}
     '
 
+Syncs/Flushes a JSON store
+
+    curl -X POST http://localhost:9010/jsonstore/News/sync
+    curl -X POST http://localhost:9010/jsonstore/News/flush
+
