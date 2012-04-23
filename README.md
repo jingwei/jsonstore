@@ -52,3 +52,4 @@ So this parameter must be set properly based on the estimated size of data sets.
 Depending on the size of data sets, you may have to modify the JVM heap size accordingly via MAVEN_OPTS.
 For example, you can increase the JVM heap size to 8g using <code>MAVEN_OPTS="-Xms8g -Xmx8g"</code>.
 
+For more information on REST operations, check out [jsonstore/jsonstore-webapp/README.md](https://github.com/jingwei/jsonstore/blob/master/jsonstore-webapp/README.md).
