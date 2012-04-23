@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>jsonstore</groupId>
+    <artifactId>prj</artifactId>
+    <version>0.1</version>
+  </parent>
+
+  <name>JSONStore Webapp</name>
+  <artifactId>jsonstore-webapp</artifactId>
+  <packaging>war</packaging>
+
+  <build>
+    <finalName>jsonstore-webapp</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.mortbay.jetty</groupId>
+        <artifactId>maven-jetty-plugin</artifactId>
+        <version>${jetty.version}</version>
+        <configuration>
+          <webAppConfig>
+            <contextPath>/jsonstore</contextPath>
+          </webAppConfig>
+          <reload>manual</reload>
+          <connectors>
+            <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">
+              <port>9010</port>
+            </connector>
+          </connectors>
+          <systemproperties>
+            <systemproperty>
+              <name>org.apache.commons.logging.Log</name>
+              <value>org.apache.commons.logging.impl.Log4JLogger</value>
+            </systemproperty>
+            <systemproperty>
+              <name>slf4j</name>
+              <value>false</value>
+            </systemproperty>
+            <systemproperty>
+              <name>log4j.configuration</name>
+              <value>file:./src/main/resources/log4j.properties</value>
+            </systemproperty>
+          </systemproperties>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.sun.jersey</groupId>
+      <artifactId>jersey-json</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.sun.jersey</groupId>
+      <artifactId>jersey-client</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.sun.jersey</groupId>
+      <artifactId>jersey-server</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.sun.jersey.contribs</groupId>
+      <artifactId>jersey-spring</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>jsonstore</groupId>
+      <artifactId>jsonstore</artifactId>
+      <version>${jsonstore.version}</version>
+    </dependency>
+  </dependencies>
+
+  <properties>
+    <jetty.version>6.1.25</jetty.version>
+    <jersey.version>1.0.2</jersey.version>
+    <jsonstore.version>0.1</jsonstore.version>
+  </properties>
+
+</project>
+
