@@ -44,7 +44,7 @@ For more information, check out http://maven.apache.org/guides/mini/guide-ide-ec
 
 Launch the jsonstore-webapp application using the next command from the jsonstore/jsonstore-webapp folder:
 
-    MAVEN_OPTS="-Xms1g -Xmx1g" mvn clean jetty:run -Djsonstore.instance.home=repository -Djsonstore.instance.initial.capacity=100000
+    MAVEN_OPTS="-Xms1g -Xmx1g" mvn clean jetty:run -Djsonstore.instance.home=repository -Djsonstore.instance.initial.capacity=1000000
 
 The parameter <code>jsonstore.instance.initial.capacity</code> cannot be modified once the JSONRepository instance is up and running.
 So this parameter must be set properly based on the estimated size of data sets.
