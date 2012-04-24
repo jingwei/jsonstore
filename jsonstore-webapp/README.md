@@ -54,8 +54,8 @@ Creates a JSON store for "News".
     }
     '
 
-    The parameter <code>initialCapacity</code> cannot be modified once the JSON store instance is up and running.
-    So this parameter must be set properly based on the estimated size of data sets.
+The parameter <code>initialCapacity</code> cannot be modified once the JSON store instance is up and running.
+So this parameter must be set properly based on the estimated size of data sets.
 
 Creates a customized JSON store using the JSON schema below.
 
