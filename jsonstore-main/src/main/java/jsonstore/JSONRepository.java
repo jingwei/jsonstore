@@ -40,14 +40,7 @@ import krati.store.DataStore;
  * 
  * <pre>
  *   -Djsonstore.instance.home=&lt;homeDir&gt;
- *   -Djsonstore.instance.initial.capacity=&lt;initialCapacity&gt;
  * </pre>
- * 
- * <p>
- * The parameter <code>jsonstore.instance.initial.capacity</code> cannot be modified
- * once the JSONRepository instance is up and running. So this parameter must be set
- * properly based on the estimated size of data sets.
- * </p>
  * 
  * @author jwu
  * @since 04/20, 2012
