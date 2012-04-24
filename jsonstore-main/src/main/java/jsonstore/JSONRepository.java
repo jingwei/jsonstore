@@ -25,13 +25,14 @@ import java.io.Reader;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import krati.core.StoreConfig;
 import krati.core.StoreFactory;
+import krati.core.segment.SegmentFactory;
 import krati.core.segment.WriteBufferSegmentFactory;
 import krati.io.Serializer;
-import krati.io.serializer.LongSerializer;
 import krati.store.DataStore;
 
 /**
@@ -242,12 +243,73 @@ public final class JSONRepository {
     }
     
     /**
+     * Gets the JSON object from a file associated with the specified <code>source</code>.
+     * 
+     * @param source - the source (i.e., store name)
+     * @param jsonName - the JSON file associated with the specified source
+     * @return the JSON object or <code>null</code> if the specified JSON file is not present.
+     * @throws JSONException
+     */
+    protected JSONObject getJSONObject(String source, String jsonName) throws JSONException {
+        String jsonStr = getJSONFile(source, jsonName);
+        return jsonStr == null ? null : new JSONObject(jsonStr);
+    }
+    
+    /**
+     * Creates the default JSON configuration.
+     * 
+     * @throws JSONException
+     */
+    public static JSONObject createDefaultConfig() {
+        JSONObject config = new JSONObject();
+        return completeConfig(config);
+    }
+    
+    /**
+     * Completes the JSON configuration with default values if needed.
+     * 
+     * @param config - the configuration JSON object
+     * @return - the completed JSON configuration
+     * @throws JSONException
+     */
+    public static JSONObject completeConfig(JSONObject config) {
+        try {
+            if(!config.has("initialCapacity")) {
+                config.put("initialCapacity", 1000000);
+            }
+            if(!config.has("batchSize")) {
+                config.put("batchSize", 1000);
+            }
+            if(!config.has("numSyncBatches")) {
+                config.put("numSyncBatches", 10);
+            }
+            if(!config.has("segmentFileSizeMB")) {
+                config.put("segmentFileSizeMB", 128);
+            }
+            if(!config.has("segmentFactoryClass")) {
+                config.put("segmentFactoryClass", WriteBufferSegmentFactory.class.getCanonicalName());
+            }
+            if(!config.has("keySerializerClass")) {
+                config.put("keySerializerClass", PathKeyLongSerializer.class.getCanonicalName());
+            }
+            if(!config.has("valueSerializerClass")) {
+                config.put("valueSerializerClass", JSONObjectSerializer.class.getCanonicalName());
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        
+        return config;
+    }
+    
+    /**
      * Create a new JSON store for the specified <code>source</code>.
      * 
      * @param source - the source (i.e., store name)
      * @return the created JSON store
      * @throws Exception if the JSON store cannot be created for any reasons.
      */
+    @SuppressWarnings("unchecked")
     public synchronized JSONObjectStore create(String source) throws Exception {
         if(has(source)) {
             return get(source);
@@ -256,20 +318,40 @@ public final class JSONRepository {
         // Create the JSON store directory
         File storeDir = getStoreDir(source, true);
         
-        int initialCapacity = 1000000;
-        String value = System.getProperty("jsonstore.instance.initial.capacity");
-        if(value != null) {
-            initialCapacity = Integer.parseInt(value);
+        // Get the JSON configuration
+        JSONObject jsonConfig = getJSONObject(source, "config.json");
+        if(jsonConfig == null) {
+            jsonConfig = createDefaultConfig();
+        } else {
+            jsonConfig = completeConfig(jsonConfig);
         }
+        putJSONFile(source, "config.json", jsonConfig.toString(2));
         
-        StoreConfig config = new StoreConfig(storeDir, initialCapacity); // Customize
-        config.setSegmentFactory(new WriteBufferSegmentFactory());       // Customize
-        config.setSegmentFileSizeMB(128);                                // Customize
-        config.setBatchSize(1000);                                       // Customize
-        config.setNumSyncBatches(10);                                    // Customize
+        // Get configuration parameters
+        int initialCapacity = jsonConfig.getInt("initialCapacity");
+        int batchSize = jsonConfig.getInt("batchSize");
+        int numSyncBatches = jsonConfig.getInt("numSyncBatches");
+        int segmentFileSizeMB = jsonConfig.getInt("segmentFileSizeMB");
+        String segmentFactoryClass = jsonConfig.getString("segmentFactoryClass");
+        SegmentFactory segmentFactory = (SegmentFactory)Class.forName(segmentFactoryClass).newInstance();
         
-        Serializer<Long> keySerializer = new LongSerializer();           // Customize
-        Serializer<JSONObject> valueSerializer = new JSONObjectSerializer();
+        // StoreConfig
+        StoreConfig config = new StoreConfig(storeDir, initialCapacity);
+        config.setBatchSize(batchSize);
+        config.setNumSyncBatches(numSyncBatches);
+        config.setSegmentFileSizeMB(segmentFileSizeMB);
+        config.setSegmentFactory(segmentFactory);
+        
+        // keySerializer
+        String keySerializerClass = jsonConfig.getString("keySerializerClass");
+        Serializer<String> keySerializer =
+            (Serializer<String>)Class.forName(keySerializerClass).newInstance();
+        
+        // valueSerializer
+        String valueSerializerClass = jsonConfig.getString("valueSerializerClass");
+        Serializer<JSONObject> valueSerializer =
+            (Serializer<JSONObject>)Class.forName(valueSerializerClass).newInstance();
+        
         DataStore<byte[], byte[]> store = StoreFactory.createIndexedDataStore(config);
         JSONObjectStore jsonStore = new JSONObjectStore(store, keySerializer, valueSerializer);
         repository.put(source, jsonStore);
@@ -277,21 +359,22 @@ public final class JSONRepository {
     }
     
     /**
-     * Gets the JSON schema associated with the specified <code>source</code>.
+     * Gets the JSON string from a file associated with the specified <code>source</code>.
      * 
      * @param source - the source (i.e., store name)
-     * @return the JSON schema string
+     * @param jsonName - the JSON file associated with the specified source
+     * @return the JSON string
      */
-    public synchronized String getSchema(String source) {
+    public synchronized String getJSONFile(String source, String jsonName) {
         try {
             File storeDir = getStoreDir(source, false);
-            File schemaFile = new File(storeDir, "schema.json");
-            if(schemaFile.exists()) {
+            File jsonFile = new File(storeDir, jsonName);
+            if(jsonFile.exists()) {
                 int length = 0;
                 char[] buffer = new char[2048];
                 StringBuilder builder = new StringBuilder();
                 
-                Reader in = new InputStreamReader(new FileInputStream(schemaFile), "UTF-8");
+                Reader in = new InputStreamReader(new FileInputStream(jsonFile), "UTF-8");
                 while((length = in.read(buffer, 0, buffer.length)) > 0) {
                     builder.append(buffer, 0, length);
                 }
@@ -307,6 +390,55 @@ public final class JSONRepository {
     }
     
     /**
+     * Puts a JSON string in a file associated with the specified <code>source</code>.
+     * 
+     * @param source - the source (i.e., store name)
+     * @param jsonName - the JSON file associated with the specified source
+     * @param jsonStr - the JSON string
+     * @throws IOException
+     */
+    public synchronized void putJSONFile(String source, String jsonName, String jsonStr) throws IOException {
+        File storeDir = getStoreDir(source, true);
+        File schemaFile = new File(storeDir, jsonName);
+        PrintWriter writer = new PrintWriter(schemaFile, "UTF-8");
+        writer.println(jsonStr);
+        writer.close();
+    }
+    
+    /**
+     * Removes the JSON file associated with the specified <code>source</code>.
+     * 
+     * @param source - the source (i.e., store name)
+     * @param jsonName - the JSON file associated with the specified source
+     * @return the JSON string if the JSON file is present
+     */
+    public synchronized String removeJSONFile(String source, String jsonName) {
+        String schemaStr = null;
+        try {
+            File storeDir = getStoreDir(source, false);
+            File schemaFile = new File(storeDir, jsonName);
+            if(schemaFile.exists()) {
+                schemaStr = getSchema(source);
+                schemaFile.delete();
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        
+        return schemaStr;
+    }
+    
+    /**
+     * Gets the JSON schema associated with the specified <code>source</code>.
+     * 
+     * @param source - the source (i.e., store name)
+     * @return the JSON schema string
+     */
+    public synchronized String getSchema(String source) {
+        return getJSONFile(source, "schema.json");
+    }
+    
+    /**
      * Associates the specified JSON schema with the specified <code>source</code>.
      * 
      * @param source - the source (i.e., store name)
@@ -314,11 +446,7 @@ public final class JSONRepository {
      * @throws IOException
      */
     public synchronized void putSchema(String source, String schemaStr) throws IOException {
-        File storeDir = getStoreDir(source, true);
-        File schemaFile = new File(storeDir, "schema.json");
-        PrintWriter writer = new PrintWriter(schemaFile, "UTF-8");
-        writer.println(schemaStr);
-        writer.close();
+        putJSONFile(source, "schema.json", schemaStr);
     }
     
     /**
@@ -328,19 +456,41 @@ public final class JSONRepository {
      * @return the JSON schema string if the JSON schema is present
      */
     public synchronized String removeSchema(String source) {
-        String schemaStr = null;
-        try {
-            File storeDir = getStoreDir(source, false);
-            File schemaFile = new File(storeDir, "schema.json");
-            if(schemaFile.exists()) {
-                schemaStr = getSchema(source);
-                schemaFile.delete();
-            }
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-
-        return schemaStr;
+        return removeJSONFile(source, "schema.json");
+    }
+    
+    /**
+     * Gets the configuration in JSON associated with the specified <code>source</code>.
+     * 
+     * @param source - the source (i.e., store name)
+     * @return the configuration JSON string
+     */
+    public synchronized String getConfig(String source) {
+        return getJSONFile(source, "config.json");
+    }
+    
+    /**
+     * Associates the specified configuration in JSON with the specified <code>source</code>.
+     * 
+     * @param source - the source (i.e., store name)
+     * @param configStr - the configuration JSON string
+     * @throws IOException
+     * @throws JSONException 
+     */
+    public synchronized void putConfig(String source, String configStr) throws IOException, JSONException {
+        JSONObject config = new JSONObject(configStr);
+        configStr = completeConfig(config).toString(2);
+        putJSONFile(source, "config.json", configStr);
+    }
+    
+    /**
+     * Removes the configuration in JSON associated with the specified <code>source</code>.
+     * 
+     * @param source - the source (i.e., store name)
+     * @return the configuration JSON string if the configuration file is present
+     */
+    public synchronized String removeConfig(String source) {
+        return removeJSONFile(source, "config.json");
     }
     
     /**

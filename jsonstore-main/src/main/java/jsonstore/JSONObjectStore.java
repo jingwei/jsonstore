@@ -28,7 +28,7 @@ import krati.store.SerializableObjectStore;
  * @author jwu
  * @since 04/20, 2012
  */
-public class JSONObjectStore extends SerializableObjectStore<Long, JSONObject> {
+public class JSONObjectStore extends SerializableObjectStore<String, JSONObject> {
     
     /**
      * Constructs a new instance of JSONObjectStore.
@@ -38,7 +38,7 @@ public class JSONObjectStore extends SerializableObjectStore<Long, JSONObject> {
      * @param valueSerializer - the value serializer of JSONObjectStore
      */
     public JSONObjectStore(DataStore<byte[], byte[]> store,
-                           Serializer<Long> keySerializer,
+                           Serializer<String> keySerializer,
                            Serializer<JSONObject> valueSerializer) {
         super(store, keySerializer, valueSerializer);
     }

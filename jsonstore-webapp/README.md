@@ -39,20 +39,53 @@ For more information, check out http://maven.apache.org/guides/mini/guide-ide-ec
 
 Launch the jsonstore-webapp application using the next command from the jsonstore/jsonstore-webapp folder:
 
-    MAVEN_OPTS="-Xms1g -Xmx1g" mvn clean jetty:run -Djsonstore.instance.home=repository -Djsonstore.instance.initial.capacity=1000000
-
-The parameter <code>jsonstore.instance.initial.capacity</code> cannot be modified once the JSONRepository instance is up and running.
-So this parameter must be set properly based on the estimated size of data sets.
+    MAVEN_OPTS="-Xms1g -Xmx1g" mvn clean jetty:run -Djsonstore.instance.home=repository
 
 Depending on the size of data sets, you may have to modify the JVM heap size accordingly via MAVEN_OPTS.
 For example, you can increase the JVM heap size to 8g using <code>MAVEN_OPTS="-Xms8g -Xmx8g"</code>.
 
 ### Perform REST Operations
 
-Creates the specified "News" JSON store.
+Creates a JSON store for "News".
 
-    curl -X POST http://localhost:9010/jsonstore/News
+    curl -X POST -H "Content-type: application/json" http://localhost:9010/jsonstore/News -d '
+    {
+      "initialCapacity": 1000000
+    }
+    '
 
+    The parameter <code>initialCapacity</code> cannot be modified once the JSON store instance is up and running.
+    So this parameter must be set properly based on the estimated size of data sets.
+
+Creates a customized JSON store using the JSON schema below.
+
+    {
+      "name" : "config",
+      "type" : "object",
+      "properties" :
+      {
+        "initialCapacity": { "type": "number" },
+        "batchSize": { "type": "number" },
+        "numSyncBatches": { "type": "number" },
+        "segmentFileSizeMB": { "type": "number" },
+        "segmentFactoryClass": { "type": "string" },
+        "keySerializerClass": { "type": "string" },
+        "valueSerializerClass": { "type": "string" }
+      }
+    }
+    
+    curl -X POST -H "Content-type: application/json" http://localhost:9010/jsonstore/News -d '
+    {
+      "initialCapacity": 1000000,
+      "batchSize": 1000,
+      "numSyncBatches": 10,
+      "segmentFileSizeMB": 128,
+      "segmentFactoryClass": "krati.core.segment.WriteBufferSegmentFactory",
+      "keySerializerClass": "jsonstore.PathKeyLongSerializer",
+      "valueSerializerClass": "jsonstore.JSONObjectSerializer"
+    }
+    '
+    
 Puts the JSON schema of the specified JSON store.
 
     curl -X PUT -H "Content-type: application/json" http://localhost:9010/jsonstore/News -d '
@@ -62,7 +95,7 @@ Puts the JSON schema of the specified JSON store.
       "properties" : {
         "id": { "type": "number", "required": true },
         "title": { "type" : "string", "required": true },
-        "summary": { "type" : "string", optional: true },
+        "summary": { "type" : "string" },
         "timestamp": { "type" : "number", "required": true }
       }
     }

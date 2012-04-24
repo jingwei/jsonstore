@@ -93,15 +93,14 @@ public class JSONStoreResource {
             }
         } else {
             JSONObjectStore jsonStore = repository.get(source);
-            Map<Long, JSONObject> kvMap = new HashMap<Long, JSONObject>(); 
+            Map<String, JSONObject> kvMap = new HashMap<String, JSONObject>(); 
             
             for(String param : list) {
-                String[] parts = param.split(",");
-                for(String s : parts) {
-                    s = s.trim();
-                    if(s.length() > 0) {
+                String[] keys = param.split(",");
+                for(String key : keys) {
+                    key = key.trim();
+                    if(key.length() > 0) {
                         try {
-                            long key = Long.parseLong(s);
                             JSONObject value = jsonStore.get(key);
                             kvMap.put(key, value);
                         } catch(Exception e) {
@@ -144,9 +143,16 @@ public class JSONStoreResource {
     
     @POST
     @Path("/{source}")
+    @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.TEXT_PLAIN})
-    public Response createStore(@PathParam("source")String source) {
+    public Response postStore(@PathParam("source")String source, JSONObject config) {
         try {
+            // Save the JSON configuration
+            if(!repository.knows(source)) {
+                repository.putConfig(source, config.toString(2));
+            }
+            
+            // Creates the JSON store
             if(!repository.has(source)) {
                 repository.create(source);
                 return Response.status(Status.OK).entity(source + " created").build();
@@ -162,7 +168,7 @@ public class JSONStoreResource {
     @DELETE
     @Path("/{source}")
     @Produces({MediaType.TEXT_PLAIN})
-    public Response removeStore(@PathParam("source")String source) {
+    public Response deleteStore(@PathParam("source")String source) {
         try {
             if(repository.knows(source)) {
                 repository.remove(source);
@@ -179,7 +185,7 @@ public class JSONStoreResource {
     @GET
     @Path("/{source}/{key}")
     @Produces({MediaType.APPLICATION_JSON})
-    public Response doStoreGet(@PathParam("source")String source, @PathParam("key")long key) {
+    public Response doStoreGet(@PathParam("source")String source, @PathParam("key")String key) {
         try {
             JSONObjectStore jsonStore = repository.get(source);
             JSONObject value = jsonStore.get(key);
@@ -193,7 +199,7 @@ public class JSONStoreResource {
     @Path("/{source}/{key}")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Response doStorePut(@PathParam("source")String source, @PathParam("key")long key, JSONObject value) {
+    public Response doStorePut(@PathParam("source")String source, @PathParam("key")String key, JSONObject value) {
         try {
             JSONObjectStore jsonStore = repository.get(source);
             JSONObject old = jsonStore.get(key);
@@ -208,7 +214,7 @@ public class JSONStoreResource {
     @POST
     @Path("/{source}/{key}")
     @Consumes({MediaType.APPLICATION_JSON})
-    public Response doStorePost(@PathParam("source")String source, @PathParam("key")long key, JSONObject value) {
+    public Response doStorePost(@PathParam("source")String source, @PathParam("key")String key, JSONObject value) {
         try {
             JSONObjectStore jsonStore = repository.get(source);
             jsonStore.put(key, value);
@@ -222,7 +228,7 @@ public class JSONStoreResource {
     @DELETE
     @Path("/{source}/{key}")
     @Produces({MediaType.APPLICATION_JSON})
-    public Response doStoreDelete(@PathParam("source")String source, @PathParam("key")long key) {
+    public Response doStoreDelete(@PathParam("source")String source, @PathParam("key")String key) {
         try {
             JSONObjectStore jsonStore = repository.get(source);
             JSONObject deleted = jsonStore.get(key);
