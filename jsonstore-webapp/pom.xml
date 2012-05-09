@@ -78,7 +78,7 @@
 
   <properties>
     <jetty.version>6.1.25</jetty.version>
-    <jersey.version>1.0.2</jersey.version>
+    <jersey.version>1.12</jersey.version>
     <jsonstore.version>0.1</jsonstore.version>
   </properties>
 

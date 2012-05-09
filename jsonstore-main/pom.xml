@@ -56,8 +56,8 @@
     </dependency>
     <dependency>
       <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-lgpl</artifactId>
-      <version>${jackson.lgpl.version}</version>
+      <artifactId>jackson-core-lgpl</artifactId>
+      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.sna-projects.krati</groupId>
@@ -67,9 +67,8 @@
   </dependencies>
 
   <properties>
-    <jackson.version>1.8.5</jackson.version>
-    <jackson.lgpl.version>0.9.4</jackson.lgpl.version>
-    <jettison.version>1.0.1</jettison.version>
+    <jackson.version>1.9.2</jackson.version>
+    <jettison.version>1.3.1</jettison.version>
     <krati.version>0.4.5</krati.version>
 
     <test.jvm.args>

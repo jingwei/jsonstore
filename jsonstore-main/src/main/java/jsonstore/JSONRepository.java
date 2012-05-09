@@ -23,8 +23,11 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.log4j.Logger;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -40,6 +43,7 @@ import krati.store.DataStore;
  * 
  * <pre>
  *   -Djsonstore.instance.home=&lt;homeDir&gt;
+ *   -Djsonstore.instance.sync.seconds=&lt;numSeconds&gt;
  * </pre>
  * 
  * @author jwu
@@ -47,9 +51,24 @@ import krati.store.DataStore;
  */
 public final class JSONRepository {
     /**
+     * The logger.
+     */
+    private static final Logger logger = Logger.getLogger(JSONRepository.class);
+    
+    /**
      * The home directory of repository.
      */
     private File homeDir;
+    
+    /**
+     * Sync cycle in seconds (default 60).
+     */
+    private int syncCycle = 60;
+    
+    /**
+     * Sync scheduler.
+     */
+    private final Timer syncTimer = new Timer();
     
     /**
      * The multi-JSONObjectStore repository.
@@ -58,11 +77,67 @@ public final class JSONRepository {
         new ConcurrentHashMap<String, JSONObjectStore>();
     
     /**
+     * The minimum sync cycle is 10 seconds.
+     */
+    public static final int MIN_SYNC_CYCLE = 10;
+    
+    /**
      * Constructs a new instance of JSONRepository.
      * 
      * @throws Exception if the repository cannot be instantiated.
      */
     public JSONRepository() throws Exception {
+        this.initHomeDir();
+        this.initSyncCycle();
+        this.initRepository();
+    }
+    
+    /**
+     * Constructs a new instance of JSONRepository.
+     * 
+     * @param homeDir - the home directory
+     * @param syncSeconds - the sync cycle in seconds 
+     * @throws Exception if the repository cannot be instantiated.
+     */
+    public JSONRepository(File homeDir, int syncSeconds) throws Exception {
+        if(!homeDir.exists()) {
+            homeDir.mkdirs();
+        }
+        this.homeDir = homeDir;
+        this.setSyncCycle(syncSeconds);
+        this.initRepository();
+    }
+    
+    /**
+     * Initialize the home directory.
+     */
+    protected void initHomeDir() {
+        String path = System.getProperty("jsonstore.instance.home");
+        homeDir = new File(path);
+        if(!homeDir.exists()) {
+            homeDir.mkdirs();
+        }
+    }
+    
+    /**
+     * Initialize the sync cycle in milliseconds.
+     */
+    protected void initSyncCycle() {
+        String param = System.getProperty("jsonstore.instance.sync.seconds");
+        if(param != null) {
+            try {
+                int numSeconds = Integer.parseInt(param);
+                setSyncCycle(numSeconds);
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    /**
+     * Initialize the JSONRepository with known JSON stores.
+     */
+    protected void initRepository() throws Exception {
         File[] files = getHomeDir().listFiles();
         for(File file : files) {
             if(file.isDirectory()) {
@@ -72,7 +147,7 @@ public final class JSONRepository {
             }
         }
         
-        // Adds shutdown hook to sync store changes
+        // Add a shutdown hook to sync store changes
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public synchronized void run() {
@@ -85,6 +160,23 @@ public final class JSONRepository {
                 }
             }
         });
+        
+        // Add a timer to persist store changes periodically
+        long period = getSyncCycle() * 1000L;
+        syncTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                for(String source : repository.keySet()) {
+                    try {
+                        repository.get(source).persist();
+                        logger.info(source + " persisted");
+                    } catch (Exception e) {
+                        logger.warn("failed to persist " + source, e);
+                    }
+                }
+            }
+        },
+        period, period);
     }
     
     /**
@@ -206,16 +298,24 @@ public final class JSONRepository {
      * 
      * @throws Exception
      */
-    public File getHomeDir() throws IOException {
-        if(homeDir == null) {
-            String path = System.getProperty("jsonstore.instance.home");
-            homeDir = new File(path);
-            if(!homeDir.exists()) {
-                homeDir.mkdirs();
-            }
-        }
-        
+    public final File getHomeDir() throws IOException {
         return homeDir;
+    }
+    
+    /**
+     * Gets the sync cycle in seconds.
+     */
+    public final int getSyncCycle() {
+        return syncCycle;
+    }
+    
+    /**
+     * Sets the sync cycle to the specified value <code>numSeconds</code>.
+     * 
+     * @param numSeconds - the number of seconds
+     */
+    public final void setSyncCycle(int numSeconds) {
+        this.syncCycle = Math.max(numSeconds, MIN_SYNC_CYCLE);
     }
     
     /**

@@ -30,7 +30,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.Status;
@@ -41,8 +40,8 @@ import org.codehaus.jettison.json.JSONObject;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import com.sun.jersey.api.core.InjectParam;
 import com.sun.jersey.api.spring.Autowire;
-import com.sun.jersey.spi.inject.Inject;
 
 import jsonstore.JSONObjectStore;
 import jsonstore.JSONRepository;
@@ -60,14 +59,11 @@ import jsonstore.JSONRepository;
 public class JSONStoreResource {
     final static Logger logger = Logger.getLogger(JSONStoreResource.class);
     
-    @Inject
+    @InjectParam
     JSONRepository repository;
     
     @Context
     UriInfo uriInfo;
-    
-    @Context
-    Request request;
     
     @GET
     @Path("/{source}")
