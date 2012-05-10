@@ -45,6 +45,7 @@ import com.sun.jersey.api.spring.Autowire;
 
 import jsonstore.JSONObjectStore;
 import jsonstore.JSONRepository;
+import jsonstore.JSONStoreStatus;
 
 /**
  * JSONStoreResource
@@ -67,7 +68,7 @@ public class JSONStoreResource {
     
     @GET
     @Path("/{source}")
-    @Produces({MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response getStore(@PathParam("source")String source) {
         List<String> list = uriInfo.getQueryParameters().get("keys");
         
@@ -78,14 +79,17 @@ public class JSONStoreResource {
                     if(schemaStr != null) {
                         return Response.status(Status.OK).entity(schemaStr).build();
                     } else {
-                        return Response.status(Status.OK).entity(source + " found").build();
+                        JSONObject status = JSONStoreStatus.FOUND.build(source);
+                        return Response.status(Status.OK).entity(status).build();
                     }
                 } else {
-                    return Response.status(Status.OK).entity(source + " not found").build();
+                    JSONObject status = JSONStoreStatus.NOT_FOUND.build(source);
+                    return Response.status(Status.OK).entity(status).build();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+                JSONObject status = JSONStoreStatus.FAILED.build(source, e.getMessage());
+                return Response.status(Status.INTERNAL_SERVER_ERROR).entity(status).build();
             }
         } else {
             JSONObjectStore jsonStore = repository.get(source);
@@ -111,14 +115,15 @@ public class JSONStoreResource {
                 return Response.status(Status.OK).entity(json).build();
             } catch (JSONException e) {
                 e.printStackTrace();
-                return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+                JSONObject status = JSONStoreStatus.FAILED.build(source, e.getMessage());
+                return Response.status(Status.INTERNAL_SERVER_ERROR).entity(status).build();
             }
         }
     }
     
     @PUT
     @Path("/{source}")
-    @Produces({MediaType.TEXT_PLAIN})
+    @Produces({MediaType.APPLICATION_JSON})
     @Consumes({MediaType.APPLICATION_JSON})
     public Response putStore(@PathParam("source")String source, JSONObject schema) {
         try {
@@ -130,17 +135,19 @@ public class JSONStoreResource {
             repository.putSchema(source, schemaStr);
             logger.info(source + " schema: " + schemaStr);
             
-            return Response.status(Status.OK).entity(source + " schema added").build();
+            JSONObject status = JSONStoreStatus.UPDATED.build(source, "schema added");
+            return Response.status(Status.OK).entity(status).build();
         } catch (Exception e) {
             e.printStackTrace();
-            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+            JSONObject status = JSONStoreStatus.FAILED.build(source, e.getMessage());
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(status).build();
         }
     }
     
     @POST
     @Path("/{source}")
     @Consumes({MediaType.APPLICATION_JSON})
-    @Produces({MediaType.TEXT_PLAIN})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response postStore(@PathParam("source")String source, JSONObject config) {
         try {
             // Save the JSON configuration
@@ -151,30 +158,39 @@ public class JSONStoreResource {
             // Creates the JSON store
             if(!repository.has(source)) {
                 repository.create(source);
-                return Response.status(Status.OK).entity(source + " created").build();
+                
+                JSONObject status = JSONStoreStatus.CREATED.build(source);
+                return Response.status(Status.OK).entity(status).build();
             } else {
-                return Response.status(Status.OK).entity(source + " found").build();
+                JSONObject status = JSONStoreStatus.FOUND.build(source);
+                return Response.status(Status.OK).entity(status).build();
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+            JSONObject status = JSONStoreStatus.FAILED.build(source, e.getMessage());
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(status).build();
         }
     }
     
     @DELETE
     @Path("/{source}")
-    @Produces({MediaType.TEXT_PLAIN})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response deleteStore(@PathParam("source")String source) {
         try {
             if(repository.knows(source)) {
                 repository.remove(source);
-                return Response.status(Status.OK).entity(source + " removed").build();
+                
+                JSONObject status = JSONStoreStatus.DELETED.build(source);
+                return Response.status(Status.OK).entity(status).build();
             } else {
-                return Response.status(Status.OK).entity(source + " not found").build();
+                
+                JSONObject status = JSONStoreStatus.NOT_FOUND.build(source);
+                return Response.status(Status.OK).entity(status).build();
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+            JSONObject status = JSONStoreStatus.FAILED.build(source, e.getMessage());
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(status).build();
         }
     }
     
@@ -187,7 +203,8 @@ public class JSONStoreResource {
             JSONObject value = jsonStore.get(key);
             return Response.status(Status.OK).entity(value).build();
         } catch (Exception e) {
-            return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+            JSONObject status = JSONStoreStatus.FAILED.build(source, e.getMessage());
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(status).build();
         }
     }
     
@@ -203,21 +220,26 @@ public class JSONStoreResource {
             return Response.status(Status.OK).entity(old).build();
         } catch (Exception e) {
         	e.printStackTrace();
-            return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+            JSONObject status = JSONStoreStatus.FAILED.build(source, e.getMessage());
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(status).build();
         }
     }
     
     @POST
     @Path("/{source}/{key}")
     @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response doStorePost(@PathParam("source")String source, @PathParam("key")String key, JSONObject value) {
         try {
             JSONObjectStore jsonStore = repository.get(source);
             jsonStore.put(key, value);
-            return Response.status(Status.OK).build();
+            
+            JSONObject status = JSONStoreStatus.UPDATED.build(source);
+            return Response.status(Status.OK).entity(status).build();
         } catch (Exception e) {
         	e.printStackTrace();
-            return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+            JSONObject status = JSONStoreStatus.FAILED.build(source, e.getMessage());
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(status).build();
         }
     }
     
@@ -232,41 +254,50 @@ public class JSONStoreResource {
             return Response.status(Status.OK).entity(deleted).build();
         } catch (Exception e) {
             e.printStackTrace();
-            return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+            JSONObject status = JSONStoreStatus.FAILED.build(source, e.getMessage());
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(status).build();
         }
     }
     
     @POST
     @Path("/{source}/flush")
-    @Produces({MediaType.TEXT_PLAIN})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response flush(@PathParam("source")String source) {
         try {
             JSONObjectStore jsonStore = repository.get(source);
             if(jsonStore != null) {
                 jsonStore.persist();
-                return Response.status(Status.OK).entity("OK").build();
+                
+                JSONObject status = JSONStoreStatus.FLUSHED.build(source, "persist");
+                return Response.status(Status.OK).entity(status).build();
             } else {
-                return Response.status(Status.OK).entity(source + " not found").build();
+                JSONObject status = JSONStoreStatus.NOT_FOUND.build(source);
+                return Response.status(Status.OK).entity(status).build();
             }
         } catch (Exception e) {
-            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+            JSONObject status = JSONStoreStatus.FAILED.build(source, e.getMessage());
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(status).build();
         }
     }
     
     @POST
     @Path("/{source}/sync")
-    @Produces({MediaType.TEXT_PLAIN})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response sync(@PathParam("source")String source) {
         try {
             JSONObjectStore jsonStore = repository.get(source);
             if(jsonStore != null) {
                 jsonStore.sync();
-                return Response.status(Status.OK).entity("OK").build();
+                
+                JSONObject status = JSONStoreStatus.FLUSHED.build(source, "sync");
+                return Response.status(Status.OK).entity(status).build();
             } else {
-                return Response.status(Status.OK).entity(source + " not found").build();
+                JSONObject status = JSONStoreStatus.NOT_FOUND.build(source);
+                return Response.status(Status.OK).entity(status).build();
             }
         } catch (Exception e) {
-            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+            JSONObject status = JSONStoreStatus.FAILED.build(source, e.getMessage());
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(status).build();
         }
     }
 }
