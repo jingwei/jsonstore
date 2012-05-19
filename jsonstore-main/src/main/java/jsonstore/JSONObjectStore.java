@@ -16,11 +16,16 @@
 
 package jsonstore;
 
+import java.io.IOException;
+import java.util.Map.Entry;
+
 import org.codehaus.jettison.json.JSONObject;
 
 import krati.io.Serializer;
 import krati.store.DataStore;
+import krati.store.ObjectStore;
 import krati.store.SerializableObjectStore;
+import krati.util.IndexedIterator;
 
 /**
  * JSONObjectStore
@@ -28,7 +33,11 @@ import krati.store.SerializableObjectStore;
  * @author jwu
  * @since 04/20, 2012
  */
-public class JSONObjectStore extends SerializableObjectStore<String, JSONObject> {
+public class JSONObjectStore<K> implements ObjectStore<K, JSONObject> {
+    /**
+     * The internal base store.
+     */
+    private final SerializableObjectStore<K, JSONObject> baseStore;
     
     /**
      * Constructs a new instance of JSONObjectStore.
@@ -38,8 +47,78 @@ public class JSONObjectStore extends SerializableObjectStore<String, JSONObject>
      * @param valueSerializer - the value serializer of JSONObjectStore
      */
     public JSONObjectStore(DataStore<byte[], byte[]> store,
-                           Serializer<String> keySerializer,
+                           Serializer<K> keySerializer,
                            Serializer<JSONObject> valueSerializer) {
-        super(store, keySerializer, valueSerializer);
+        baseStore = new SerializableObjectStore<K, JSONObject>(store, keySerializer, valueSerializer);
+    }
+    
+    @Override
+    public byte[] getBytes(K key) {
+        return baseStore.getBytes(key);
+    }
+    
+    @Override
+    public byte[] getBytes(byte[] keyBytes) {
+        return baseStore.getBytes(keyBytes);
+    }
+    
+    @Override
+    public int capacity() {
+        return baseStore.capacity();
+    }
+    
+    @Override
+    public JSONObject get(K key) {
+        return baseStore.get(key);
+    }
+    
+    @Override
+    public boolean put(K key, JSONObject value) throws Exception {
+        return baseStore.put(key, value);
+    }
+    
+    @Override
+    public boolean delete(K key) throws Exception {
+        return baseStore.delete(key);
+    }
+    
+    @Override
+    public void clear() throws IOException {
+        baseStore.clear();
+    }
+    
+    @Override
+    public IndexedIterator<Entry<K, JSONObject>> iterator() {
+        return baseStore.iterator();
+    }
+    
+    @Override
+    public IndexedIterator<K> keyIterator() {
+        return baseStore.keyIterator();
+    }
+    
+    @Override
+    public void persist() throws IOException {
+        baseStore.persist();
+    }
+    
+    @Override
+    public void sync() throws IOException {
+        baseStore.sync();
+    }
+    
+    @Override
+    public boolean isOpen() {
+        return baseStore.isOpen();
+    }
+    
+    @Override
+    public void open() throws IOException {
+        baseStore.open();
+    }
+    
+    @Override
+    public void close() throws IOException {
+        baseStore.close();
     }
 }

@@ -73,8 +73,8 @@ public final class JSONRepository {
     /**
      * The multi-JSONObjectStore repository.
      */
-    private final Map<String, JSONObjectStore> repository =
-        new ConcurrentHashMap<String, JSONObjectStore>();
+    private final Map<String, JSONObjectStore<String>> repository =
+        new ConcurrentHashMap<String, JSONObjectStore<String>>();
     
     /**
      * The minimum sync cycle is 10 seconds.
@@ -142,7 +142,7 @@ public final class JSONRepository {
         for(File file : files) {
             if(file.isDirectory()) {
                 String source = file.getName();
-                JSONObjectStore jsonStore = create(source);
+                JSONObjectStore<String> jsonStore = create(source);
                 repository.put(source, jsonStore);
             }
         }
@@ -216,7 +216,7 @@ public final class JSONRepository {
      * 
      * @param source - the source (i.e., store name)
      */
-    public JSONObjectStore get(String source) {
+    public JSONObjectStore<String> get(String source) {
         return repository.get(source);
     }
     
@@ -226,7 +226,7 @@ public final class JSONRepository {
      * @param source - the source (i.e., store name)
      * @param jsonStore - the JSON store
      */
-    public void put(String source, JSONObjectStore jsonStore) {
+    public void put(String source, JSONObjectStore<String> jsonStore) {
         repository.put(source, jsonStore);
     }
     
@@ -261,7 +261,7 @@ public final class JSONRepository {
      * @throws Exception
      */
     public boolean close(String source) throws Exception {
-        JSONObjectStore store = repository.remove(source);
+        JSONObjectStore<String> store = repository.remove(source);
         if(store != null) {
             store.close();
             return true;
@@ -278,7 +278,7 @@ public final class JSONRepository {
      * @param source - the source (i.e., store name)
      */
     public void remove(String source) {
-        JSONObjectStore store = repository.remove(source);
+        JSONObjectStore<String> store = repository.remove(source);
         try {
             if(store != null) {
                 store.close();
@@ -403,7 +403,7 @@ public final class JSONRepository {
      * @throws Exception if the JSON store cannot be created for any reasons.
      */
     @SuppressWarnings("unchecked")
-    public synchronized JSONObjectStore create(String source) throws Exception {
+    public synchronized JSONObjectStore<String> create(String source) throws Exception {
         if(has(source)) {
             return get(source);
         }
@@ -446,7 +446,7 @@ public final class JSONRepository {
             (Serializer<JSONObject>)Class.forName(valueSerializerClass).newInstance();
         
         DataStore<byte[], byte[]> store = StoreFactory.createIndexedDataStore(config);
-        JSONObjectStore jsonStore = new JSONObjectStore(store, keySerializer, valueSerializer);
+        JSONObjectStore<String> jsonStore = new JSONObjectStore<String>(store, keySerializer, valueSerializer);
         repository.put(source, jsonStore);
         return jsonStore; 
     }
