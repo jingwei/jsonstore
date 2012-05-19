@@ -92,7 +92,7 @@ public class JSONStoreResource {
                 return Response.status(Status.INTERNAL_SERVER_ERROR).entity(status).build();
             }
         } else {
-            JSONObjectStore jsonStore = repository.get(source);
+            JSONObjectStore<String> jsonStore = repository.get(source);
             Map<String, JSONObject> kvMap = new HashMap<String, JSONObject>(); 
             
             for(String param : list) {
@@ -199,7 +199,7 @@ public class JSONStoreResource {
     @Produces({MediaType.APPLICATION_JSON})
     public Response doStoreGet(@PathParam("source")String source, @PathParam("key")String key) {
         try {
-            JSONObjectStore jsonStore = repository.get(source);
+            JSONObjectStore<String> jsonStore = repository.get(source);
             JSONObject value = jsonStore.get(key);
             return Response.status(Status.OK).entity(value).build();
         } catch (Exception e) {
@@ -214,7 +214,7 @@ public class JSONStoreResource {
     @Produces({MediaType.APPLICATION_JSON})
     public Response doStorePut(@PathParam("source")String source, @PathParam("key")String key, JSONObject value) {
         try {
-            JSONObjectStore jsonStore = repository.get(source);
+            JSONObjectStore<String> jsonStore = repository.get(source);
             JSONObject old = jsonStore.get(key);
             jsonStore.put(key, value);
             return Response.status(Status.OK).entity(old).build();
@@ -231,7 +231,7 @@ public class JSONStoreResource {
     @Produces({MediaType.APPLICATION_JSON})
     public Response doStorePost(@PathParam("source")String source, @PathParam("key")String key, JSONObject value) {
         try {
-            JSONObjectStore jsonStore = repository.get(source);
+            JSONObjectStore<String> jsonStore = repository.get(source);
             jsonStore.put(key, value);
             
             JSONObject status = JSONStoreStatus.UPDATED.build(source);
@@ -248,7 +248,7 @@ public class JSONStoreResource {
     @Produces({MediaType.APPLICATION_JSON})
     public Response doStoreDelete(@PathParam("source")String source, @PathParam("key")String key) {
         try {
-            JSONObjectStore jsonStore = repository.get(source);
+            JSONObjectStore<String> jsonStore = repository.get(source);
             JSONObject deleted = jsonStore.get(key);
             jsonStore.delete(key);
             return Response.status(Status.OK).entity(deleted).build();
@@ -264,7 +264,7 @@ public class JSONStoreResource {
     @Produces({MediaType.APPLICATION_JSON})
     public Response flush(@PathParam("source")String source) {
         try {
-            JSONObjectStore jsonStore = repository.get(source);
+            JSONObjectStore<String> jsonStore = repository.get(source);
             if(jsonStore != null) {
                 jsonStore.persist();
                 
@@ -285,7 +285,7 @@ public class JSONStoreResource {
     @Produces({MediaType.APPLICATION_JSON})
     public Response sync(@PathParam("source")String source) {
         try {
-            JSONObjectStore jsonStore = repository.get(source);
+            JSONObjectStore<String> jsonStore = repository.get(source);
             if(jsonStore != null) {
                 jsonStore.sync();
                 
