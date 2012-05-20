@@ -86,6 +86,12 @@ Creates a customized JSON store using the JSON schema below.
     }
     '
     
+The store configuration shown above uses the default values. It is not recommended to change any of these settings after creating a new JSON store.
+
+The default <code>keySerializerClass</code> is <code>jsonstore.PathKeyLongSerializer</code>
+requiring that path keys must have the <code>java.lang.Long</code> type. If your path keys are strings (i.e., <code>java.lang.String</code>), you can assign
+<code>jsonstore.PathKeyStringSerializer</code> to <code>keySerializerClass</code>.
+ 
 Puts the JSON schema of the specified JSON store.
 
     curl -X PUT -H "Content-type: application/json" http://localhost:9010/jsonstore/News -d '
