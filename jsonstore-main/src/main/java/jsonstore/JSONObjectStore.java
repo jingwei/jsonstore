@@ -68,6 +68,11 @@ public class JSONObjectStore<K> implements ObjectStore<K, JSONObject> {
     }
     
     @Override
+    public int getLength(K key) {
+        return baseStore.getLength(key);
+    }
+    
+    @Override
     public JSONObject get(K key) {
         return baseStore.get(key);
     }
