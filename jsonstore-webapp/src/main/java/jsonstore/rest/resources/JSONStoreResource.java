@@ -37,8 +37,6 @@ import javax.ws.rs.core.Response.Status;
 import org.apache.log4j.Logger;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
 import com.sun.jersey.api.core.InjectParam;
 import com.sun.jersey.api.spring.Autowire;
@@ -54,8 +52,6 @@ import jsonstore.JSONStoreStatus;
  * @since 04/20, 2012
  */
 @Autowire
-@Component
-@Scope("request")
 @Path("/")
 public class JSONStoreResource {
     final static Logger logger = Logger.getLogger(JSONStoreResource.class);
