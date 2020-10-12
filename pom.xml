@@ -116,7 +116,7 @@
 
   <properties>
     <jdkLevel>1.6</jdkLevel>
-    <junit.version>4.5</junit.version>
+    <junit.version>4.13.1</junit.version>
     <log4j.version>1.2.16</log4j.version>
 
     <project.build.sourceEncoding>
